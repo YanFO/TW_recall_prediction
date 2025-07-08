@@ -1,0 +1,77 @@
+version: '3.8'
+
+services:
+  # 主要分析應用
+  recall-analyzer:
+    build: .
+    container_name: taiwan-recall-analyzer
+    ports:
+      - "8501:8501"  # Streamlit Dashboard
+    volumes:
+      - ./data:/app/data          # 資料持久化
+      - ./output:/app/output      # 輸出檔案
+      - ./logs:/app/logs          # 日誌檔案
+      - ./dashboard.py:/app/dashboard.py  # 主儀表板代碼 (即時更新)
+    environment:
+      - TZ=Asia/Taipei
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    networks:
+      - recall-network
+
+  # Redis快取 (可選，用於提升性能)
+  redis:
+    image: redis:7-alpine
+    container_name: recall-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    restart: unless-stopped
+    networks:
+      - recall-network
+
+  # PostgreSQL資料庫 (可選，用於資料持久化)
+  postgres:
+    image: postgres:15-alpine
+    container_name: recall-postgres
+    environment:
+      POSTGRES_DB: recall_analysis
+      POSTGRES_USER: recall_user
+      POSTGRES_PASSWORD: recall_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    restart: unless-stopped
+    networks:
+      - recall-network
+
+  # 定時任務執行器 (可選，用於自動更新資料)
+  scheduler:
+    build: .
+    container_name: recall-scheduler
+    volumes:
+      - ./data:/app/data
+      - ./output:/app/output
+      - ./logs:/app/logs
+    environment:
+      - TZ=Asia/Taipei
+      - PYTHONUNBUFFERED=1
+    command: python scheduler.py
+    depends_on:
+      - redis
+      - postgres
+    restart: unless-stopped
+    networks:
+      - recall-network
+
+networks:
+  recall-network:
+    driver: bridge
+
+volumes:
+  redis_data:
+  postgres_data:
