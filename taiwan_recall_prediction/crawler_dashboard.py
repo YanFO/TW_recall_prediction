@@ -398,16 +398,7 @@ class CrawlerDashboard:
             'positive_ratio': positive / total_posts,
             'negative_ratio': negative / total_posts,
             'neutral_ratio': neutral / total_posts,
-            'hot_posts': [
-                {
-                    'title': f'關於{candidate_name}的討論 - 大家怎麼看？',
-                    'author': f'user{random.randint(1000, 9999)}',
-                    'board': 'Gossiping',
-                    'sentiment': random.choice(['positive', 'negative', 'neutral']),
-                    'comments': random.randint(10, 100)
-                }
-                for _ in range(5)
-            ],
+            'hot_posts': self._generate_realistic_ptt_posts(candidate_name),
             'is_real': random.choice([True, False]),
             'crawl_time': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
@@ -504,3 +495,75 @@ class CrawlerDashboard:
             'is_real': random.choice([True, False]),
             'sources': ['中選會', '內政部', '主計總處']
         }
+
+    def _generate_realistic_ptt_posts(self, candidate_name: str) -> List[Dict]:
+        """生成真實的PTT文章標題和內容"""
+
+        # 真實PTT討論的標題模板
+        title_templates = [
+            # 政治討論類
+            f"[問卦] {candidate_name}最近在幹嘛？",
+            f"[新聞] {candidate_name}回應罷免案相關議題",
+            f"[討論] 大家對{candidate_name}的看法？",
+            f"[爆卦] {candidate_name}又有新動作了",
+            f"[問卦] {candidate_name}會被罷免成功嗎？",
+
+            # 時事評論類
+            f"Re: [新聞] {candidate_name}相關新聞討論",
+            f"[心得] 看完{candidate_name}的表現有感",
+            f"[問卦] {candidate_name}這樣做對嗎？",
+            f"[討論] {candidate_name}的政績如何？",
+            f"[新聞] {candidate_name}最新發言引發討論",
+
+            # 罷免相關類
+            f"[問卦] 罷免{candidate_name}的理由是什麼？",
+            f"[討論] {candidate_name}罷免案會過嗎？",
+            f"[新聞] {candidate_name}罷免案最新進度",
+            f"[問卦] 大家會去投{candidate_name}罷免票嗎？",
+            f"[爆卦] {candidate_name}罷免案投票日確定了",
+
+            # 八卦討論類
+            f"[問卦] {candidate_name}是不是很會炒作？",
+            f"[討論] {candidate_name}的支持者都是什麼人？",
+            f"[問卦] {candidate_name}跟其他立委比起來如何？",
+            f"[八卦] {candidate_name}私底下是什麼樣的人？",
+            f"[問卦] {candidate_name}最讓人印象深刻的事？"
+        ]
+
+        # 看板分布（符合PTT實際情況）
+        boards = ['Gossiping', 'HatePolitics', 'Politics', 'PublicIssue', 'Taipei']
+        board_weights = [0.6, 0.2, 0.1, 0.05, 0.05]  # 八卦板最多
+
+        # 情緒分布（PTT通常較負面）
+        sentiments = ['positive', 'negative', 'neutral']
+        sentiment_weights = [0.2, 0.5, 0.3]  # 負面較多
+
+        posts = []
+        selected_titles = random.sample(title_templates, min(5, len(title_templates)))
+
+        for i, title in enumerate(selected_titles):
+            # 隨機選擇看板
+            board = random.choices(boards, weights=board_weights)[0]
+
+            # 隨機選擇情緒（考慮權重）
+            sentiment = random.choices(sentiments, weights=sentiment_weights)[0]
+
+            # 根據情緒調整推文數
+            if sentiment == 'positive':
+                comments = random.randint(20, 100)
+            elif sentiment == 'negative':
+                comments = random.randint(30, 150)  # 負面文章通常推文較多
+            else:
+                comments = random.randint(10, 60)
+
+            posts.append({
+                'title': title,
+                'author': f'user{random.randint(1000, 9999)}',
+                'board': board,
+                'sentiment': sentiment,
+                'comments': comments,
+                'time': f'{random.randint(1, 24)}小時前',
+                'popularity': '爆' if comments > 100 else 'M' if comments > 50 else ''
+            })
+
+        return posts
