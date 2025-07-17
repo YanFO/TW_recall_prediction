@@ -90,6 +90,9 @@ class WeatherAnalyzer:
             weather_info = {
                 'city': city,
                 'forecast_date': datetime.now().isoformat(),
+                'data_source': '✅ 中央氣象署真實數據 (Real CWA Weather Data)',
+                'is_simulated': False,
+                'api_source': 'Central Weather Administration Taiwan',
                 'daily_forecasts': []
             }
             
@@ -124,19 +127,23 @@ class WeatherAnalyzer:
             return self._get_mock_weather_data(city)
     
     def _get_mock_weather_data(self, city: str) -> Dict:
-        """生成模擬天氣數據（當API不可用時）"""
+        """生成模擬天氣數據（當API不可用時）- 明確標註為模擬數據"""
         import random
-        
+
         return {
             'city': city,
             'forecast_date': datetime.now().isoformat(),
+            'data_source': '⚠️ 模擬天氣數據 (Simulated Weather Data)',
+            'is_simulated': True,
+            'note': '由於中央氣象署API不可用，使用模擬數據',
             'daily_forecasts': [{
                 'location': city,
                 'rain_probability': random.uniform(10, 80),  # 10-80%降雨機率
                 'temperature': random.uniform(18, 32),       # 18-32度
                 'humidity': random.uniform(60, 90),          # 60-90%濕度
                 'wind_speed': random.uniform(1, 8),          # 1-8 m/s風速
-                'visibility': random.uniform(5, 15)          # 5-15公里能見度
+                'visibility': random.uniform(5, 15),         # 5-15公里能見度
+                'data_quality': 'simulated'
             }]
         }
     
